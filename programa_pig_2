@@ -1,0 +1,10 @@
+REGISTER /usr/lib/pig/piggybank.jar;
+comentaris = LOAD '/user/cloudera/pig_analisis_opinions/critiquescinematografiques.csv' USING org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE')  AS (text:chararray, label:int, id:int);
+pelis = LOAD '/user/cloudera/pig_analisis_opinions/Pelis.csv' USING org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE')  AS (id:int, nom_pelicula:chararray);
+comentaris_grup = group comentaris by id;
+
+countOpinions = foreach comentaris_grup GENERATE group as id, COUNT(comentaris.id) as n_comentaris
+pelis_join = join pelis by id, countOpinions by id using 'replicated';
+pelis_opinions = foreach pelis_join generate pelis::id as id, pelis::nom_pelicula as nom_pelicula, countOpinions::n_comentaris as n_opinions
+
+STORE pelis_opinions INTO '/user/cloudera/WorkspacePigAnalisisOpinionsPractica/resultat_analisis_opinions_pelis' USING org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE');
